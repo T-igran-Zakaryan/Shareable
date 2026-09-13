@@ -42,6 +42,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		98E44A013055CB8E00655C2B /* Exceptions for "Shareable" folder in "Shareable" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 98E449DC3055CB8C00655C2B /* Shareable */;
+		};
 		98E449F63055CB8E00655C2B /* Exceptions for "Shareable MessagesExtension" folder in "Shareable MessagesExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -54,6 +61,9 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		98E449DF3055CB8C00655C2B /* Shareable */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				98E44A013055CB8E00655C2B /* Exceptions for "Shareable" folder in "Shareable" target */,
+			);
 			path = Shareable;
 			sourceTree = "<group>";
 		};
@@ -68,6 +78,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		98E449A13055CB8C00655C2B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		98E449E33055CB8D00655C2B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -113,6 +130,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 98E449FD3055CB8E00655C2B /* Build configuration list for PBXNativeTarget "Shareable" */;
 			buildPhases = (
+				98E449A03055CB8C00655C2B /* Sources */,
+				98E449A13055CB8C00655C2B /* Frameworks */,
 				98E449DB3055CB8C00655C2B /* Resources */,
 				98E449FC3055CB8E00655C2B /* Embed Foundation Extensions */,
 			);
@@ -129,7 +148,7 @@
 			);
 			productName = Shareable;
 			productReference = 98E449DD3055CB8C00655C2B /* Shareable.app */;
-			productType = "com.apple.product-type.application.messages";
+			productType = "com.apple.product-type.application";
 		};
 		98E449E53055CB8D00655C2B /* Shareable MessagesExtension */ = {
 			isa = PBXNativeTarget;
@@ -209,6 +228,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		98E449A03055CB8C00655C2B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		98E449E23055CB8D00655C2B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -237,6 +263,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Shareable MessagesExtension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Shareable;
+				INFOPLIST_KEY_NSContactsUsageDescription = "Shareable allows you to browse and share contact cards with your contacts directly in Messages.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -266,6 +293,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Shareable MessagesExtension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Shareable;
+				INFOPLIST_KEY_NSContactsUsageDescription = "Shareable allows you to browse and share contact cards with your contacts directly in Messages.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -414,6 +442,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = M9GRQ779S4;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Shareable/Info.plist;
+				INFOPLIST_KEY_NSContactsUsageDescription = "Shareable allows you to browse and share contact cards with your contacts directly in Messages.";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -437,6 +467,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = M9GRQ779S4;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Shareable/Info.plist;
+				INFOPLIST_KEY_NSContactsUsageDescription = "Shareable allows you to browse and share contact cards with your contacts directly in Messages.";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

@@ -208,16 +208,6 @@ public struct ShareableContact: Identifiable, Hashable, @unchecked Sendable {
         return "?"
     }
 
-    /// The first letter of the contact's name for alphabetical indexing (A-Z or #).
-    public var sectionIndexKey: String {
-        let name = displayName.trimmingCharacters(in: .whitespaces)
-        guard let firstChar = name.first?.uppercased() else { return "#" }
-        if firstChar >= "A" && firstChar <= "Z" {
-            return firstChar
-        }
-        return "#"
-    }
-
     /// Checks if this contact matches a given search query string.
     public func matches(query: String) -> Bool {
         let clean = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()

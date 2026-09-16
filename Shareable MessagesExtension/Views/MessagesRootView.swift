@@ -14,6 +14,11 @@ struct MessagesRootView: View {
     @Bindable var coordinator: ConversationCoordinator
 
     @State private var sheetContact: ShareableContact?
+    @FocusState private var isSearchFocused: Bool
+
+    private var isExpanded: Bool {
+        coordinator.presentationStyle == .expanded
+    }
 
     var body: some View {
         contentView
@@ -32,6 +37,16 @@ struct MessagesRootView: View {
                 if style == .compact {
                     contactManager.searchQuery = ""
                 }
+            }
+            .onChange(of: coordinator.isSearchActive) { _, isActive in
+                // Let the expanded layout settle first, or the field can't take focus.
+                Task {
+                    await Task.yield()
+                    isSearchFocused = isActive
+                }
+            }
+            .onChange(of: isSearchFocused) { _, isFocused in
+                coordinator.isSearchActive = isFocused
             }
             .sheet(item: $sheetContact) { contact in
                 ContactDetailSheet(
@@ -63,120 +78,117 @@ struct MessagesRootView: View {
     private var contentView: some View {
         switch contactManager.authorizationStatus {
         case .authorized, .limited:
-            if coordinator.presentationStyle == .compact {
-                compactView
-            } else {
-                expandedView
-            }
+            contactsView
         default:
             PermissionView(status: contactManager.authorizationStatus, onOpenApp: coordinator.openContainingApp)
         }
     }
 
-    // MARK: - Compact View (Keyboard Drawer Mode)
+    // MARK: - Contacts (same layout in compact and expanded)
 
-    private var compactView: some View {
+    private var contactsView: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                // The keyboard can't appear in compact mode, so this opens full screen with search already active.
-                Button(action: coordinator.expandForSearch) {
-                    Label("Search", systemImage: "magnifyingglass")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
-                        .background(.fill.tertiary, in: .capsule)
-                        .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Search Contacts")
+                searchField
 
                 Button {
-                    coordinator.requestPresentationStyle(.expanded)
+                    coordinator.requestPresentationStyle(isExpanded ? .compact : .expanded)
                 } label: {
-                    Label("Show All Contacts", systemImage: "arrow.up.left.and.arrow.down.right")
-                        .labelStyle(.iconOnly)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(10)
-                        .background(.fill.tertiary, in: .circle)
-                        .contentShape(.circle)
+                    Label(
+                        isExpanded ? "Collapse" : "Show All Contacts",
+                        systemImage: isExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
+                    )
+                    .labelStyle(.iconOnly)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .padding(10)
+                    .background(.fill.tertiary, in: .circle)
+                    .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
 
-            if contactManager.isLoading && contactManager.contacts.isEmpty {
-                ProgressView()
-                    .frame(maxHeight: .infinity)
-            } else if contactManager.contacts.isEmpty {
-                emptyState
+            if contactManager.contacts.isEmpty {
+                // The first fetch is quick, so show nothing rather than flashing a spinner.
+                if !contactManager.isLoading {
+                    emptyState
+                } else {
+                    Spacer()
+                }
+            } else if contactManager.filteredContacts.isEmpty {
+                StatusMessageView(
+                    systemImage: "magnifyingglass",
+                    title: "No Results",
+                    message: "No contacts match \"\(contactManager.searchQuery)\"."
+                )
             } else {
-                List(contactManager.contacts) { contact in
+                List(contactManager.filteredContacts) { contact in
                     row(for: contact)
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
+                .scrollDismissesKeyboard(.immediately)
             }
         }
     }
 
-    // MARK: - Expanded View (Full Screen Mode)
+    /// A real text field when expanded. In compact mode the keyboard can't appear,
+    /// so the same-looking pill expands the app with search already focused.
+    @ViewBuilder
+    private var searchField: some View {
+        if isExpanded {
+            searchCapsule {
+                TextField("Name, phone or email", text: $contactManager.searchQuery)
+                    .focused($isSearchFocused)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
 
-    private var expandedView: some View {
-        NavigationStack {
-            Group {
-                if contactManager.isLoading && contactManager.contacts.isEmpty {
-                    ProgressView()
-                } else if contactManager.contacts.isEmpty {
-                    emptyState
-                } else if contactManager.filteredContacts.isEmpty {
-                    ContentUnavailableView.search(text: contactManager.searchQuery)
-                } else {
-                    List {
-                        ForEach(contactManager.sectionedContacts) { section in
-                            Section(section.title) {
-                                ForEach(section.contacts) { contact in
-                                    // Extra trailing room keeps share buttons clear of the A–Z index.
-                                    row(for: contact, trailingInset: 28)
-                                }
-                            }
-                            .sectionIndexLabel(section.title)
-                        }
+                if !contactManager.searchQuery.isEmpty {
+                    Button("Clear Search", systemImage: "xmark.circle.fill") {
+                        contactManager.searchQuery = ""
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
-                    .listSectionIndexVisibility(.visible)
-                    .refreshable {
-                        contactManager.fetchContacts()
-                    }
+                    .labelStyle(.iconOnly)
+                    .foregroundStyle(.tertiary)
+                    .buttonStyle(.plain)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.systemBackground))
-            .searchable(
-                text: $contactManager.searchQuery,
-                isPresented: $coordinator.isSearchActive,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Name, phone or email"
-            )
-            .navigationTitle("Contacts")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Collapse", systemImage: "chevron.down") {
-                        coordinator.requestPresentationStyle(.compact)
-                    }
+            .onTapGesture {
+                isSearchFocused = true
+            }
+        } else {
+            Button(action: coordinator.expandForSearch) {
+                searchCapsule {
+                    Text("Search")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Search Contacts")
         }
+    }
+
+    private func searchCapsule(@ViewBuilder content: () -> some View) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+
+            content()
+        }
+        .font(.subheadline)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(.fill.tertiary, in: .capsule)
+        .contentShape(.capsule)
     }
 
     // MARK: - Shared Pieces
 
-    private func row(for contact: ShareableContact, trailingInset: CGFloat = 16) -> some View {
+    private func row(for contact: ShareableContact) -> some View {
         ContactRowView(
             contact: contact,
             isShared: coordinator.lastSharedContactID == contact.id,
@@ -185,13 +197,13 @@ struct MessagesRootView: View {
             },
             onCustomizeShare: {
                 // Request expanded mode so the sheet has full space
-                if coordinator.presentationStyle == .compact {
+                if !isExpanded {
                     coordinator.requestPresentationStyle(.expanded)
                 }
                 sheetContact = contact
             }
         )
-        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: trailingInset))
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         .listRowBackground(Color.clear)
     }
 

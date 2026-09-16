@@ -10,13 +10,6 @@ import Contacts
 import SwiftUI
 import Observation
 
-/// Section grouping for contacts in alphabetical display.
-public struct ContactSection: Identifiable, Sendable {
-    public var id: String { title }
-    public let title: String
-    public let contacts: [ShareableContact]
-}
-
 @Observable
 @MainActor
 public final class ContactManager {
@@ -115,31 +108,12 @@ public final class ContactManager {
         return results
     }
 
-    // MARK: - Filtered and Grouped Results
+    // MARK: - Filtered Results
 
     /// Contacts filtered by current search query.
     public var filteredContacts: [ShareableContact] {
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return contacts }
         return contacts.filter { $0.matches(query: query) }
-    }
-
-    /// Grouped and alphabetically sorted contact sections (e.g. A, B, C, ..., #).
-    public var sectionedContacts: [ContactSection] {
-        let items = filteredContacts
-        let grouped = Dictionary(grouping: items) { $0.sectionIndexKey }
-
-        let sortedKeys = grouped.keys.sorted { first, second in
-            if first == "#" { return false }
-            if second == "#" { return true }
-            return first < second
-        }
-
-        return sortedKeys.map { key in
-            let sortedSectionItems = (grouped[key] ?? []).sorted {
-                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
-            }
-            return ContactSection(title: key, contacts: sortedSectionItems)
-        }
     }
 }

@@ -45,6 +45,12 @@ public final class ConversationCoordinator {
         controller?.requestPresentationStyle(style)
     }
 
+    /// Closes the iMessage app entirely, back to the conversation transcript.
+    /// Used where collapsing isn't possible, such as landscape on iPhone.
+    public func dismissExtension() {
+        controller?.dismiss()
+    }
+
     /// The keyboard is unavailable in compact mode, so expand first and activate search once the transition lands.
     public func expandForSearch() {
         if presentationStyle == .expanded {

@@ -14,10 +14,19 @@ struct MessagesRootView: View {
     @Bindable var coordinator: ConversationCoordinator
 
     @State private var sheetContact: ShareableContact?
+    /// Set when the detail sheet is what expanded the app, so closing it can collapse back.
+    @State private var didExpandForSheet = false
     @FocusState private var isSearchFocused: Bool
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var isExpanded: Bool {
         coordinator.presentationStyle == .expanded
+    }
+
+    /// In landscape on iPhone, Messages only ever presents the app expanded, so a
+    /// collapse request is a no-op. Offer to close the app instead.
+    private var canCollapse: Bool {
+        verticalSizeClass != .compact
     }
 
     var body: some View {
@@ -48,7 +57,7 @@ struct MessagesRootView: View {
             .onChange(of: isSearchFocused) { _, isFocused in
                 coordinator.isSearchActive = isFocused
             }
-            .sheet(item: $sheetContact) { contact in
+            .sheet(item: $sheetContact, onDismiss: restorePresentationAfterSheet) { contact in
                 ContactDetailSheet(
                     contact: contact,
                     onShareSelective: { phones, emails, addresses, includePhoto in
@@ -91,19 +100,14 @@ struct MessagesRootView: View {
             HStack(spacing: 8) {
                 searchField
 
-                Button {
-                    coordinator.requestPresentationStyle(isExpanded ? .compact : .expanded)
-                } label: {
-                    Label(
-                        isExpanded ? "Collapse" : "Show All Contacts",
-                        systemImage: isExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
-                    )
-                    .labelStyle(.iconOnly)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .padding(10)
-                    .background(.fill.tertiary, in: .circle)
-                    .contentShape(.circle)
+                Button(action: togglePresentation) {
+                    Label(presentationToggleTitle, systemImage: presentationToggleIcon)
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .padding(10)
+                        .background(.fill.tertiary, in: .circle)
+                        .contentShape(.circle)
                 }
                 .buttonStyle(.plain)
             }
@@ -132,6 +136,36 @@ struct MessagesRootView: View {
                 .scrollDismissesKeyboard(.immediately)
             }
         }
+    }
+
+    // MARK: - Presentation Toggle
+
+    private var presentationToggleTitle: String {
+        guard canCollapse else { return "Close" }
+        return isExpanded ? "Collapse" : "Show All Contacts"
+    }
+
+    private var presentationToggleIcon: String {
+        guard canCollapse else { return "xmark" }
+        return isExpanded ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"
+    }
+
+    /// The sheet expands the app on the user's behalf, so put the drawer back where
+    /// it was once the sheet closes. Sharing already collapses on its own.
+    /// Portrait only: landscape has no compact drawer to return to.
+    private func restorePresentationAfterSheet() {
+        guard didExpandForSheet else { return }
+        didExpandForSheet = false
+        guard canCollapse else { return }
+        coordinator.requestPresentationStyle(.compact)
+    }
+
+    private func togglePresentation() {
+        guard canCollapse else {
+            coordinator.dismissExtension()
+            return
+        }
+        coordinator.requestPresentationStyle(isExpanded ? .compact : .expanded)
     }
 
     /// A real text field when expanded. In compact mode the keyboard can't appear,
@@ -198,6 +232,7 @@ struct MessagesRootView: View {
             onCustomizeShare: {
                 // Request expanded mode so the sheet has full space
                 if !isExpanded {
+                    didExpandForSheet = true
                     coordinator.requestPresentationStyle(.expanded)
                 }
                 sheetContact = contact
